@@ -18,7 +18,8 @@ export class LoginController {
           const isPasswordValid = await compare(password, user.password)
 
           if (isPasswordValid) {
-            return res.status(200).json(user)
+            const { id, name, email, avatar_url, description, created_at } = user
+            return res.status(200).json({ id, name, email, avatar_url, description, created_at})
           } else {
             throw new AppError('❌ Credenciais inválidas, verifique suas informações! ❌')
           }
