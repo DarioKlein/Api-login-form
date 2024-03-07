@@ -1,5 +1,7 @@
 import express from 'express'
 import { routes } from './routes/index.js'
+import bodyParser from 'body-parser'
+
 
 const app = express()
 const port = 3000
@@ -10,6 +12,9 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
   next()
 })
+
+app.use(bodyParser.json({ limit: '10mb' }));
+
 app.use(express.json())
 app.use(routes)
 

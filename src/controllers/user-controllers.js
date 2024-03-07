@@ -2,7 +2,6 @@ import { hash, compare } from 'bcrypt'
 import sqliteConnection from '../database/sqlite/index.js'
 import { AppError } from '../utils/app-error.js'
 import { verifyRegex } from '../utils/verify-regex.js'
-import { isValidUrl } from '../utils/validator-url.js'
 
 export class UsersController {
   async create(req, res) {
@@ -85,14 +84,10 @@ export class UsersController {
           throw new AppError('A descrição não pode exceder 255 caracteres.')
         }
 
-        if (avatar_url && !isValidUrl(avatar_url)) {
-          throw new AppError('A URL do avatar não é válida.')
-        }
-
         verifyRegex(data)
 
-        user.name = name ?? user.name
-        user.email = email ?? user.email
+        user.name = name || user.name
+        user.email = email || user.email
         user.avatar_url = avatar_url ?? user.avatar_url
         user.description = description ?? user.description
 
@@ -110,19 +105,22 @@ export class UsersController {
           user.password = await hash(password, 8)
         }
 
-        await database.run(
-          `UPDATE users SET
-          name = ?,
-          email = ?,
-          password = ?,
-          avatar_url = ?,
-          description = ?,
-          updated_at = DATETIME('now')
-          WHERE id = ?`,
-          [user.name, user.email, user.password, user.avatar_url, user.description, id]
-        )
-
-        return res.status(200).json()
+        if (user.name && user.email && user.password) {
+          await database.run(
+            `UPDATE users SET
+              name = ?,
+              email = ?,
+              password = ?,
+              avatar_url = ?,
+              description = ?,
+              updated_at = DATETIME('now')
+              WHERE id = ?`,
+            [user.name, user.email, user.password, user.avatar_url, user.description, id]
+          )
+          return res.status(200).json()
+        } else {
+          throw new AppError('Calma lá amigão, não pode criar usuário fantasma')
+        }
       } else {
         throw new AppError('Os dados não foram enviados!')
       }
@@ -146,6 +144,23 @@ export class UsersController {
       return res.status(204).json()
     } catch (error) {
       return res.status(400).json(error.message)
+    }
+  }
+
+  async searchId(req, res) {
+    try {
+      const { id } = req.params
+      const database = await sqliteConnection()
+      const user = await database.get('SELECT * FROM users WHERE id = (?) ', [id])
+
+      if (user) {
+        const { id, name, email, avatar_url, description, created_at } = user
+        return res.status(200).json({ id, name, email, avatar_url, description, created_at })
+      } else {
+        throw new AppError('O usuário fornecido não foi encontrado')
+      }
+    } catch (error) {
+      return res.status(500).json(error.message)
     }
   }
 }
