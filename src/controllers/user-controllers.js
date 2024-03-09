@@ -29,7 +29,7 @@ export class UsersController {
       const hashedPassword = await hash(password, 8)
 
       await database.run('INSERT INTO users (name, email, password) values(?, ?, ?)', [name, email, hashedPassword])
-      return res.status(201).json()
+      return res.status(201).json('Usuário criado com sucesso')
     } catch (error) {
       return res.status(400).json(error.message)
     }
@@ -143,7 +143,8 @@ export class UsersController {
 
   async searchId(req, res) {
     try {
-      const { idUser } = req.params
+      const params = req.params
+      const idUser = params.id
       const database = await sqliteConnection()
       const user = await database.get('SELECT * FROM users WHERE id = (?) ', [idUser])
 

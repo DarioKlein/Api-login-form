@@ -7,12 +7,18 @@ export class LoginController {
   async login(req, res) {
     try {
       const data = req.body
-      verifyRegex(data)
+
+      if (Object.keys(data).length === 0) {
+        throw new AppError('Os dados não foram enviados!')
+      }
+
       const { email, password } = data
 
       if (!email || !password) {
         throw new AppError('Ambos os campos são obrigatórios!')
       }
+
+      verifyRegex(data)
 
       const database = await sqliteConnection()
       const user = await database.get('SELECT * FROM users WHERE email = (?)', [email])
