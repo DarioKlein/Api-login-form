@@ -10,25 +10,25 @@ export class LoginController {
       verifyRegex(data)
       const { email, password } = data
 
-      if (email && password) {
-        const database = await sqliteConnection()
-        const user = await database.get('SELECT * FROM users WHERE email = (?)', [email])
-
-        if (user) {
-          const isPasswordValid = await compare(password, user.password)
-
-          if (isPasswordValid) {
-            const { id } = user
-            return res.status(200).json({ id })
-          } else {
-            throw new AppError('❌ Credenciais inválidas, verifique suas informações! ❌')
-          }
-        } else {
-          throw new AppError('❌ Credenciais inválidas, verifique suas informações! ❌')
-        }
-      } else {
+      if (!email || !password) {
         throw new AppError('Ambos os campos são obrigatórios!')
       }
+
+      const database = await sqliteConnection()
+      const user = await database.get('SELECT * FROM users WHERE email = (?)', [email])
+
+      if (!user) {
+        throw new AppError('❌ Credenciais inválidas, verifique suas informações! ❌')
+      }
+
+      const isPasswordValid = await compare(password, user.password)
+
+      if (!isPasswordValid) {
+        throw new AppError('❌ Credenciais inválidas, verifique suas informações! ❌')
+      }
+
+      const { id } = user
+      return res.status(200).json({ id })
     } catch (error) {
       return res.status(400).json(error.message)
     }
